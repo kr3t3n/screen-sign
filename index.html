@@ -547,10 +547,11 @@
     localStorage.setItem('screen-sign-text', input.value);
   });
 
-  // Click on display closes any open panel
+  // Click on display: close settings if open, otherwise open editor
   display.addEventListener('click', () => {
-    if (panelOpen) togglePanel(false);
-    if (settingsOpen) toggleSettings(false);
+    if (settingsOpen) { toggleSettings(false); return; }
+    if (panelOpen) { togglePanel(false); return; }
+    togglePanel(true);
   });
 
   window.addEventListener('resize', () => { if (!manualSize) fitText(); });
