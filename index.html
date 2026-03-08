@@ -493,19 +493,36 @@
     hideFabs(open);
   }
 
+  function applyPastedText(text) {
+    input.value = text;
+    localStorage.setItem('screen-sign-text', text);
+    manualSize = null;
+    fitText();
+  }
+
   fabPaste.addEventListener('click', async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      input.value = text;
-      localStorage.setItem('screen-sign-text', text);
-      manualSize = null;
-      fitText();
-    } catch (e) {
-      // Fallback if clipboard permission denied
-      input.focus();
-      document.execCommand('selectAll');
-      document.execCommand('paste');
+    // Try modern Clipboard API first (requires HTTPS)
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      try {
+        const text = await navigator.clipboard.readText();
+        applyPastedText(text);
+        return;
+      } catch (e) { /* fall through to fallback */ }
     }
+    // Fallback: open editor and prompt user to paste with Ctrl+V / Cmd+V
+    togglePanel(true);
+    input.value = '';
+    input.placeholder = 'Press Ctrl+V / Cmd+V to paste...';
+    input.focus();
+    const onPaste = (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      applyPastedText(text);
+      input.placeholder = 'Type your sign text (markdown)...';
+      input.removeEventListener('paste', onPaste);
+      togglePanel(false);
+    };
+    input.addEventListener('paste', onPaste);
   });
 
   fabEdit.addEventListener('click', () => togglePanel(true));
