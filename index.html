@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Screen Sign</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  #display {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.15;
+    cursor: default;
+  }
+
+  #display .content {
+    max-width: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  #display .content h1, #display .content h2, #display .content h3 { font-size: inherit; margin: 0; }
+  #display .content p { margin: 0.2em 0; }
+  #display .content strong { font-weight: 900; }
+  #display .content em { font-style: italic; }
+  #display .content ul, #display .content ol { list-style: none; padding: 0; }
+  #display .content li { margin: 0.1em 0; }
+  #display .content code { font-family: monospace; background: rgba(255,255,255,0.1); padding: 0 0.2em; border-radius: 3px; }
+
+  /* Floating toggle button */
+  #fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  #fab:hover { background: rgba(255,255,255,0.25); }
+
+  /* Input panel */
+  #panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 12px 16px;
+    z-index: 200;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  #panel.open {
+    transform: translateY(0);
+  }
+
+  #input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    padding: 10px 12px;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  #input::placeholder { color: rgba(255,255,255,0.35); }
+  #input:focus { border-color: rgba(255,255,255,0.4); }
+
+  .btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .btn:hover { background: rgba(255,255,255,0.15); }
+
+  #close-btn {
+    background: rgba(255,255,255,0.05);
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="display"><div class="content" id="content"></div></div>
+
+<button id="fab" title="Edit sign">&#9998;</button>
+
+<div id="panel">
+  <textarea id="input" rows="1" placeholder="Type your sign text (markdown)..."></textarea>
+  <button class="btn" id="minus-btn" title="Decrease font">&minus;</button>
+  <button class="btn" id="plus-btn" title="Increase font">+</button>
+  <button class="btn" id="close-btn" title="Close">&check;</button>
+</div>
+
+<script>
+  const display = document.getElementById('display');
+  const content = document.getElementById('content');
+  const fab = document.getElementById('fab');
+  const panel = document.getElementById('panel');
+  const input = document.getElementById('input');
+  const plusBtn = document.getElementById('plus-btn');
+  const minusBtn = document.getElementById('minus-btn');
+  const closeBtn = document.getElementById('close-btn');
+
+  let manualSize = null; // null = auto-fit, number = manual override
+  let panelOpen = false;
+
+  // Minimal markdown parser
+  function parseMd(text) {
+    let html = text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      // headings
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      // bold & italic
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // inline code
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      // line breaks
+      .replace(/\n/g, '<br>');
+    return html;
+  }
+
+  function fitText() {
+    const text = input.value.trim();
+    if (!text) {
+      content.innerHTML = '<span style="opacity:0.15; font-size:24px;">tap &#9998; to write</span>';
+      return;
+    }
+    content.innerHTML = parseMd(text);
+
+    if (manualSize !== null) {
+      display.style.fontSize = manualSize + 'px';
+      return;
+    }
+
+    // Binary search for max font size that fits
+    const availW = display.clientWidth - 40;
+    const availH = display.clientHeight - 40;
+    let lo = 10, hi = 800, best = 10;
+
+    while (lo <= hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      display.style.fontSize = mid + 'px';
+      if (content.scrollWidth <= availW && content.scrollHeight <= availH) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    display.style.fontSize = best + 'px';
+  }
+
+  function getCurrentSize() {
+    return parseInt(display.style.fontSize) || 100;
+  }
+
+  function togglePanel(open) {
+    panelOpen = open;
+    panel.classList.toggle('open', open);
+    fab.style.opacity = open ? '0' : '1';
+    fab.style.pointerEvents = open ? 'none' : 'auto';
+    if (open) input.focus();
+  }
+
+  fab.addEventListener('click', () => togglePanel(true));
+  closeBtn.addEventListener('click', () => togglePanel(false));
+
+  plusBtn.addEventListener('click', () => {
+    manualSize = getCurrentSize() + 8;
+    display.style.fontSize = manualSize + 'px';
+  });
+
+  minusBtn.addEventListener('click', () => {
+    manualSize = Math.max(10, getCurrentSize() - 8);
+    display.style.fontSize = manualSize + 'px';
+  });
+
+  input.addEventListener('input', () => {
+    manualSize = null;
+    fitText();
+    // auto-resize textarea
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+
+  // Double-tap display to toggle panel
+  let lastTap = 0;
+  display.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - lastTap < 350) togglePanel(!panelOpen);
+    lastTap = now;
+  });
+
+  // Re-fit on resize
+  window.addEventListener('resize', () => { if (!manualSize) fitText(); });
+
+  // Load saved text
+  const saved = localStorage.getItem('screen-sign-text');
+  if (saved) input.value = saved;
+
+  // Save on change
+  input.addEventListener('input', () => localStorage.setItem('screen-sign-text', input.value));
+
+  // Initial render
+  fitText();
+</script>
+</body>
+</html>
