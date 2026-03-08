@@ -1,0 +1,6 @@
+node_modules/
+package.json
+package-lock.json
+take-screenshot.mjs
+screenshot.mjs
+screenshot-controls.png
