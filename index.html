@@ -237,6 +237,7 @@
 
 <div id="panel">
   <textarea id="input" rows="1" placeholder="Type your sign text (markdown)..."></textarea>
+  <button class="btn" id="paste-btn" title="Paste from clipboard">&#128203;</button>
   <button class="btn" id="minus-btn" title="Decrease font">&minus;</button>
   <button class="btn" id="plus-btn" title="Increase font">+</button>
   <button class="btn" id="close-btn" title="Close">&check;</button>
@@ -502,6 +503,23 @@
     settings.classList.toggle('open', open);
     hideFabs(open);
   }
+
+  const pasteBtn = document.getElementById('paste-btn');
+
+  pasteBtn.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      input.value = text;
+      localStorage.setItem('screen-sign-text', text);
+      manualSize = null;
+      fitText();
+    } catch (e) {
+      // Fallback if clipboard permission denied
+      input.focus();
+      document.execCommand('selectAll');
+      document.execCommand('paste');
+    }
+  });
 
   fabEdit.addEventListener('click', () => togglePanel(true));
   fabSettings.addEventListener('click', () => toggleSettings(true));
