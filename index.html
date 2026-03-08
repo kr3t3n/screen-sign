@@ -63,6 +63,9 @@
 
   #fab-edit { right: 20px; }
   #fab-settings { right: 76px; font-size: 18px; }
+  #fab-paste { right: 132px; font-size: 18px; }
+  #fab-minus { left: 20px; font-size: 24px; }
+  #fab-plus { left: 76px; font-size: 24px; }
 
   /* Input panel */
   #panel {
@@ -232,14 +235,14 @@
 
 <div id="display"><div class="content" id="content"></div></div>
 
+<button class="fab" id="fab-minus" title="Decrease font">&minus;</button>
+<button class="fab" id="fab-plus" title="Increase font">+</button>
+<button class="fab" id="fab-paste" title="Paste from clipboard">&#128203;</button>
 <button class="fab" id="fab-settings" title="Settings">&#9881;</button>
 <button class="fab" id="fab-edit" title="Edit sign">&#9998;</button>
 
 <div id="panel">
   <textarea id="input" rows="1" placeholder="Type your sign text (markdown)..."></textarea>
-  <button class="btn" id="paste-btn" title="Paste from clipboard">&#128203;</button>
-  <button class="btn" id="minus-btn" title="Decrease font">&minus;</button>
-  <button class="btn" id="plus-btn" title="Increase font">+</button>
   <button class="btn" id="close-btn" title="Close">&check;</button>
 </div>
 
@@ -343,8 +346,9 @@
   const panel = document.getElementById('panel');
   const settings = document.getElementById('settings');
   const input = document.getElementById('input');
-  const plusBtn = document.getElementById('plus-btn');
-  const minusBtn = document.getElementById('minus-btn');
+  const fabPaste = document.getElementById('fab-paste');
+  const fabPlus = document.getElementById('fab-plus');
+  const fabMinus = document.getElementById('fab-minus');
   const closeBtn = document.getElementById('close-btn');
   const settingsClose = document.getElementById('settings-close');
 
@@ -504,9 +508,7 @@
     hideFabs(open);
   }
 
-  const pasteBtn = document.getElementById('paste-btn');
-
-  pasteBtn.addEventListener('click', async () => {
+  fabPaste.addEventListener('click', async () => {
     try {
       const text = await navigator.clipboard.readText();
       input.value = text;
@@ -526,12 +528,12 @@
   closeBtn.addEventListener('click', () => togglePanel(false));
   settingsClose.addEventListener('click', () => { toggleSettings(false); manualSize = null; fitText(); });
 
-  plusBtn.addEventListener('click', () => {
+  fabPlus.addEventListener('click', () => {
     manualSize = getCurrentSize() + 8;
     display.style.fontSize = manualSize + 'px';
   });
 
-  minusBtn.addEventListener('click', () => {
+  fabMinus.addEventListener('click', () => {
     manualSize = Math.max(10, getCurrentSize() - 8);
     display.style.fontSize = manualSize + 'px';
   });
@@ -544,12 +546,10 @@
     localStorage.setItem('screen-sign-text', input.value);
   });
 
-  // Double-tap display to toggle panel
-  let lastTap = 0;
+  // Click on display closes any open panel
   display.addEventListener('click', () => {
-    const now = Date.now();
-    if (now - lastTap < 350) togglePanel(!panelOpen);
-    lastTap = now;
+    if (panelOpen) togglePanel(false);
+    if (settingsOpen) toggleSettings(false);
   });
 
   window.addEventListener('resize', () => { if (!manualSize) fitText(); });
