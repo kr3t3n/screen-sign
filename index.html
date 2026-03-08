@@ -560,6 +560,14 @@
   const savedText = localStorage.getItem('screen-sign-text');
   input.value = savedText || 'Hello World!';
 
+  // Global paste: if not typing in the input, paste replaces the sign text
+  document.addEventListener('paste', (e) => {
+    if (document.activeElement === input) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (text) applyPastedText(text);
+  });
+
   const s = loadSettings();
   populateSettingsUI(s);
   applySettings(s);
