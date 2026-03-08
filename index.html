@@ -11,8 +11,6 @@
     height: 100%;
     width: 100%;
     overflow: hidden;
-    background: #000;
-    color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
@@ -20,10 +18,7 @@
     width: 100%;
     height: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 20px;
-    text-align: center;
     word-break: break-word;
     line-height: 1.15;
     cursor: default;
@@ -41,19 +36,18 @@
   #display .content em { font-style: italic; }
   #display .content ul, #display .content ol { list-style: none; padding: 0; }
   #display .content li { margin: 0.1em 0; }
-  #display .content code { font-family: monospace; background: rgba(255,255,255,0.1); padding: 0 0.2em; border-radius: 3px; }
+  #display .content code { font-family: monospace; background: rgba(128,128,128,0.15); padding: 0 0.2em; border-radius: 3px; }
 
-  /* Floating toggle button */
-  #fab {
+  /* Floating buttons */
+  .fab {
     position: fixed;
     bottom: 20px;
-    right: 20px;
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: #fff;
+    background: rgba(128,128,128,0.2);
+    border: 1px solid rgba(128,128,128,0.3);
+    color: inherit;
     font-size: 22px;
     cursor: pointer;
     z-index: 100;
@@ -65,7 +59,10 @@
     transition: opacity 0.2s, transform 0.2s;
   }
 
-  #fab:hover { background: rgba(255,255,255,0.25); }
+  .fab:hover { background: rgba(128,128,128,0.35); }
+
+  #fab-edit { right: 20px; }
+  #fab-settings { right: 76px; font-size: 18px; }
 
   /* Input panel */
   #panel {
@@ -84,11 +81,10 @@
     display: flex;
     gap: 8px;
     align-items: flex-end;
+    color: #fff;
   }
 
-  #panel.open {
-    transform: translateY(0);
-  }
+  #panel.open { transform: translateY(0); }
 
   #input {
     flex: 1;
@@ -125,17 +121,119 @@
 
   .btn:hover { background: rgba(255,255,255,0.15); }
 
-  #close-btn {
-    background: rgba(255,255,255,0.05);
-    font-size: 16px;
+  #close-btn { font-size: 16px; }
+
+  /* Settings panel */
+  #settings {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20,20,20,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 16px 20px;
+    z-index: 200;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    color: #fff;
+    max-height: 60vh;
+    overflow-y: auto;
   }
+
+  #settings.open { transform: translateY(0); }
+
+  .settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .settings-header h3 { font-size: 16px; font-weight: 600; }
+
+  .settings-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.6;
+  }
+
+  .settings-close:hover { opacity: 1; }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .setting-row label {
+    font-size: 13px;
+    opacity: 0.7;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  .setting-row select,
+  .setting-row input[type="text"] {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 10px;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .setting-row select option { background: #222; color: #fff; }
+  .setting-row select:focus,
+  .setting-row input[type="text"]:focus { border-color: rgba(255,255,255,0.4); }
+
+  .color-group {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    align-items: center;
+  }
+
+  .color-group input[type="color"] {
+    width: 36px;
+    height: 32px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    padding: 2px;
+  }
+
+  .color-group input[type="text"] {
+    flex: 1;
+  }
+
+  .setting-section {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.4;
+    margin: 16px 0 8px;
+  }
+
+  .setting-section:first-child { margin-top: 0; }
 </style>
 </head>
 <body>
 
 <div id="display"><div class="content" id="content"></div></div>
 
-<button id="fab" title="Edit sign">&#9998;</button>
+<button class="fab" id="fab-settings" title="Settings">&#9881;</button>
+<button class="fab" id="fab-edit" title="Edit sign">&#9998;</button>
 
 <div id="panel">
   <textarea id="input" rows="1" placeholder="Type your sign text (markdown)..."></textarea>
@@ -144,36 +242,209 @@
   <button class="btn" id="close-btn" title="Close">&check;</button>
 </div>
 
+<div id="settings">
+  <div class="settings-header">
+    <h3>Settings</h3>
+    <button class="settings-close" id="settings-close">&times;</button>
+  </div>
+
+  <div class="setting-section">Alignment</div>
+  <div class="setting-row">
+    <label>Horizontal</label>
+    <select id="s-align-h">
+      <option value="center">Center</option>
+      <option value="flex-start">Left</option>
+      <option value="flex-end">Right</option>
+    </select>
+  </div>
+  <div class="setting-row">
+    <label>Vertical</label>
+    <select id="s-align-v">
+      <option value="center">Center</option>
+      <option value="flex-start">Top</option>
+      <option value="flex-end">Bottom</option>
+    </select>
+  </div>
+  <div class="setting-row">
+    <label>Text align</label>
+    <select id="s-text-align">
+      <option value="center">Center</option>
+      <option value="left">Left</option>
+      <option value="right">Right</option>
+    </select>
+  </div>
+
+  <div class="setting-section">Colors</div>
+  <div class="setting-row">
+    <label>Text</label>
+    <div class="color-group">
+      <input type="color" id="s-color" value="#ffffff">
+      <input type="text" id="s-color-text" value="#ffffff" maxlength="7">
+    </div>
+  </div>
+  <div class="setting-row">
+    <label>Background</label>
+    <div class="color-group">
+      <input type="color" id="s-bg" value="#000000">
+      <input type="text" id="s-bg-text" value="#000000" maxlength="7">
+    </div>
+  </div>
+
+  <div class="setting-section">Typography</div>
+  <div class="setting-row">
+    <label>Font</label>
+    <select id="s-font">
+      <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System (Default)</option>
+      <option value="Arial, Helvetica, sans-serif">Arial</option>
+      <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica Neue</option>
+      <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+      <option value="'Times New Roman', Times, serif">Times New Roman</option>
+      <option value="'Courier New', Courier, monospace">Courier New</option>
+      <option value="Verdana, Geneva, sans-serif">Verdana</option>
+      <option value="Impact, 'Arial Black', sans-serif">Impact</option>
+      <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+      <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+      <option value="Futura, 'Century Gothic', sans-serif">Futura</option>
+      <option value="Palatino, 'Palatino Linotype', serif">Palatino</option>
+    </select>
+  </div>
+  <div class="setting-row">
+    <label>Custom font</label>
+    <input type="text" id="s-font-custom" placeholder="e.g. 'Roboto', sans-serif">
+  </div>
+  <div class="setting-row">
+    <label>Weight</label>
+    <select id="s-weight">
+      <option value="400">Regular (400)</option>
+      <option value="300">Light (300)</option>
+      <option value="500">Medium (500)</option>
+      <option value="600">Semibold (600)</option>
+      <option value="700" selected>Bold (700)</option>
+      <option value="900">Black (900)</option>
+    </select>
+  </div>
+  <div class="setting-row">
+    <label>Line height</label>
+    <select id="s-line-height">
+      <option value="1">Tight (1.0)</option>
+      <option value="1.15" selected>Default (1.15)</option>
+      <option value="1.3">Relaxed (1.3)</option>
+      <option value="1.5">Spacious (1.5)</option>
+    </select>
+  </div>
+</div>
+
 <script>
   const display = document.getElementById('display');
   const content = document.getElementById('content');
-  const fab = document.getElementById('fab');
+  const fabEdit = document.getElementById('fab-edit');
+  const fabSettings = document.getElementById('fab-settings');
   const panel = document.getElementById('panel');
+  const settings = document.getElementById('settings');
   const input = document.getElementById('input');
   const plusBtn = document.getElementById('plus-btn');
   const minusBtn = document.getElementById('minus-btn');
   const closeBtn = document.getElementById('close-btn');
+  const settingsClose = document.getElementById('settings-close');
 
-  let manualSize = null; // null = auto-fit, number = manual override
+  let manualSize = null;
   let panelOpen = false;
+  let settingsOpen = false;
+
+  // Settings elements
+  const sAlignH = document.getElementById('s-align-h');
+  const sAlignV = document.getElementById('s-align-v');
+  const sTextAlign = document.getElementById('s-text-align');
+  const sColor = document.getElementById('s-color');
+  const sColorText = document.getElementById('s-color-text');
+  const sBg = document.getElementById('s-bg');
+  const sBgText = document.getElementById('s-bg-text');
+  const sFont = document.getElementById('s-font');
+  const sFontCustom = document.getElementById('s-font-custom');
+  const sWeight = document.getElementById('s-weight');
+  const sLineHeight = document.getElementById('s-line-height');
+
+  // Default settings
+  const defaults = {
+    alignH: 'center', alignV: 'center', textAlign: 'center',
+    color: '#ffffff', bg: '#000000',
+    font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontCustom: '', weight: '700', lineHeight: '1.15'
+  };
+
+  // Load settings from localStorage
+  function loadSettings() {
+    const saved = localStorage.getItem('screen-sign-settings');
+    const s = saved ? JSON.parse(saved) : {};
+    return { ...defaults, ...s };
+  }
+
+  function saveSettings() {
+    const s = {
+      alignH: sAlignH.value, alignV: sAlignV.value, textAlign: sTextAlign.value,
+      color: sColor.value, bg: sBg.value,
+      font: sFont.value, fontCustom: sFontCustom.value,
+      weight: sWeight.value, lineHeight: sLineHeight.value
+    };
+    localStorage.setItem('screen-sign-settings', JSON.stringify(s));
+    applySettings(s);
+  }
+
+  function applySettings(s) {
+    display.style.justifyContent = s.alignH;
+    display.style.alignItems = s.alignV;
+    display.style.textAlign = s.textAlign;
+    document.body.style.background = s.bg;
+    document.body.style.color = s.color;
+    const font = s.fontCustom || s.font;
+    display.style.fontFamily = font;
+    display.style.fontWeight = s.weight;
+    display.style.lineHeight = s.lineHeight;
+    // Update FAB colors to match text
+    document.querySelectorAll('.fab').forEach(f => f.style.color = s.color);
+  }
+
+  function populateSettingsUI(s) {
+    sAlignH.value = s.alignH;
+    sAlignV.value = s.alignV;
+    sTextAlign.value = s.textAlign;
+    sColor.value = s.color;
+    sColorText.value = s.color;
+    sBg.value = s.bg;
+    sBgText.value = s.bg;
+    sFont.value = s.font;
+    sFontCustom.value = s.fontCustom;
+    sWeight.value = s.weight;
+    sLineHeight.value = s.lineHeight;
+  }
+
+  // Sync color picker <-> text input
+  sColor.addEventListener('input', () => { sColorText.value = sColor.value; saveSettings(); });
+  sColorText.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(sColorText.value)) { sColor.value = sColorText.value; saveSettings(); }
+  });
+  sBg.addEventListener('input', () => { sBgText.value = sBg.value; saveSettings(); });
+  sBgText.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(sBgText.value)) { sBg.value = sBgText.value; saveSettings(); }
+  });
+
+  // All other settings
+  [sAlignH, sAlignV, sTextAlign, sFont, sFontCustom, sWeight, sLineHeight].forEach(el => {
+    el.addEventListener('change', () => { saveSettings(); manualSize = null; fitText(); });
+  });
 
   // Minimal markdown parser
   function parseMd(text) {
-    let html = text
+    return text
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      // headings
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-      // bold & italic
       .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      // inline code
       .replace(/`(.+?)`/g, '<code>$1</code>')
-      // line breaks
       .replace(/\n/g, '<br>');
-    return html;
   }
 
   function fitText() {
@@ -189,7 +460,6 @@
       return;
     }
 
-    // Binary search for max font size that fits
     const availW = display.clientWidth - 40;
     const availH = display.clientHeight - 40;
     let lo = 10, hi = 800, best = 10;
@@ -211,16 +481,32 @@
     return parseInt(display.style.fontSize) || 100;
   }
 
+  function hideFabs(hide) {
+    document.querySelectorAll('.fab').forEach(f => {
+      f.style.opacity = hide ? '0' : '1';
+      f.style.pointerEvents = hide ? 'none' : 'auto';
+    });
+  }
+
   function togglePanel(open) {
     panelOpen = open;
+    if (open && settingsOpen) toggleSettings(false);
     panel.classList.toggle('open', open);
-    fab.style.opacity = open ? '0' : '1';
-    fab.style.pointerEvents = open ? 'none' : 'auto';
+    hideFabs(open);
     if (open) input.focus();
   }
 
-  fab.addEventListener('click', () => togglePanel(true));
+  function toggleSettings(open) {
+    settingsOpen = open;
+    if (open && panelOpen) togglePanel(false);
+    settings.classList.toggle('open', open);
+    hideFabs(open);
+  }
+
+  fabEdit.addEventListener('click', () => togglePanel(true));
+  fabSettings.addEventListener('click', () => toggleSettings(true));
   closeBtn.addEventListener('click', () => togglePanel(false));
+  settingsClose.addEventListener('click', () => { toggleSettings(false); manualSize = null; fitText(); });
 
   plusBtn.addEventListener('click', () => {
     manualSize = getCurrentSize() + 8;
@@ -235,9 +521,9 @@
   input.addEventListener('input', () => {
     manualSize = null;
     fitText();
-    // auto-resize textarea
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    localStorage.setItem('screen-sign-text', input.value);
   });
 
   // Double-tap display to toggle panel
@@ -248,17 +534,15 @@
     lastTap = now;
   });
 
-  // Re-fit on resize
   window.addEventListener('resize', () => { if (!manualSize) fitText(); });
 
-  // Load saved text
-  const saved = localStorage.getItem('screen-sign-text');
-  if (saved) input.value = saved;
+  // Init
+  const savedText = localStorage.getItem('screen-sign-text');
+  if (savedText) input.value = savedText;
 
-  // Save on change
-  input.addEventListener('input', () => localStorage.setItem('screen-sign-text', input.value));
-
-  // Initial render
+  const s = loadSettings();
+  populateSettingsUI(s);
+  applySettings(s);
   fitText();
 </script>
 </body>
